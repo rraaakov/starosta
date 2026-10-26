@@ -1,11 +1,7 @@
-/* Обёртка над localStorage: данные приложения и бэкап */
 const DB_KEY = 'starosta_db_v1';
 
 const defaultDB = {
-  students: [],
-  events: [],
-  attendance: [],
-  tasks: [],
+  students: [], events: [], attendance: [], tasks: [],
 };
 
 function loadDB() {
@@ -14,19 +10,11 @@ function loadDB() {
     if (!raw) return structuredClone(defaultDB);
     const parsed = JSON.parse(raw);
     return { ...defaultDB, ...parsed };
-  } catch (e) {
-    console.error('loadDB error', e);
-    return structuredClone(defaultDB);
-  }
+  } catch (e) { console.error('loadDB error', e); return structuredClone(defaultDB); }
 }
 
-function saveDB(db) {
-  localStorage.setItem(DB_KEY, JSON.stringify(db));
-}
-
-function resetDB() {
-  localStorage.removeItem(DB_KEY);
-}
+function saveDB(db) { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+function resetDB() { localStorage.removeItem(DB_KEY); }
 
 function exportDB() {
   const data = localStorage.getItem(DB_KEY) || JSON.stringify(defaultDB);
@@ -35,9 +23,7 @@ function exportDB() {
   const a = document.createElement('a');
   a.href = url;
   a.download = `starosta-backup-${new Date().toISOString().slice(0, 10)}.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
 }
 
@@ -45,13 +31,8 @@ function importDB(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      try {
-        const parsed = JSON.parse(reader.result);
-        saveDB({ ...defaultDB, ...parsed });
-        resolve();
-      } catch (e) {
-        reject(e);
-      }
+      try { const parsed = JSON.parse(reader.result); saveDB({ ...defaultDB, ...parsed }); resolve(); }
+      catch (e) { reject(e); }
     };
     reader.onerror = reject;
     reader.readAsText(file);
