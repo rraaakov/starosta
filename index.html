@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- Онбординг -->
   <section id="onboarding" class="auth-screen hidden">
     <div class="auth-card">
       <h1>Староста</h1>
@@ -29,6 +30,7 @@
     </div>
   </section>
 
+  <!-- Вход -->
   <section id="login" class="auth-screen hidden">
     <div class="auth-card">
       <h1>Староста</h1>
@@ -50,13 +52,12 @@
     </div>
   </section>
 
+  <!-- Приложение -->
   <div id="app" class="hidden">
     <header class="app-header">
       <h2 id="app-title">Главная</h2>
     </header>
-
     <main id="view" class="view"></main>
-
     <nav class="bottom-nav">
       <a href="#/dashboard" data-route="dashboard">Главная</a>
       <a href="#/students" data-route="students">Студенты</a>
@@ -66,7 +67,7 @@
     </nav>
   </div>
 
-  <!-- Модальное окно (для студентов, событий, задач) -->
+  <!-- Модальное окно -->
   <div id="modal" class="modal hidden">
     <div class="modal-backdrop" data-close-modal></div>
     <div class="modal-card" id="modal-content"></div>
