@@ -1,7 +1,7 @@
 {
   "name": "Староста",
   "short_name": "Староста",
-  "description": "Менеджер студенческой группы: студенты, календарь, посещаемость, задачи",
+  "description": "Менеджер студенческой группы",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
