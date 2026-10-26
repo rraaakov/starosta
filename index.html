@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#3b6cf6" />
+  <title>Староста</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ЭКРАН ОНБОРДИНГА (первый запуск) -->
+  <section id="onboarding" class="auth-screen hidden">
+    <div class="auth-card">
+      <h1>Староста</h1>
+      <p class="auth-sub">Создайте аккаунт старосты</p>
+      <form id="onboarding-form" autocomplete="off">
+        <label>Логин
+          <input type="text" id="ob-username" required minlength="3" placeholder="например, starosta" />
+        </label>
+        <label>Пароль
+          <input type="password" id="ob-password" required minlength="6" placeholder="минимум 6 символов" />
+        </label>
+        <label>Повторите пароль
+          <input type="password" id="ob-password2" required minlength="6" />
+        </label>
+        <p id="ob-error" class="error"></p>
+        <button type="submit" class="btn-primary">Создать аккаунт</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ЭКРАН ВХОДА -->
+  <section id="login" class="auth-screen hidden">
+    <div class="auth-card">
+      <h1>Староста</h1>
+      <p class="auth-sub">Вход</p>
+      <form id="login-form" autocomplete="off">
+        <label>Логин
+          <input type="text" id="login-username" required />
+        </label>
+        <label>Пароль
+          <input type="password" id="login-password" required />
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" id="login-remember" checked />
+          <span>Запомнить меня</span>
+        </label>
+        <p id="login-error" class="error"></p>
+        <button type="submit" class="btn-primary">Войти</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ОСНОВНОЕ ПРИЛОЖЕНИЕ -->
+  <div id="app" class="hidden">
+    <header class="app-header">
+      <h2 id="app-title">Главная</h2>
+    </header>
+
+    <main id="view" class="view"></main>
+
+    <nav class="bottom-nav">
+      <a href="#/dashboard" data-route="dashboard">Главная</a>
+      <a href="#/students" data-route="students">Студенты</a>
+      <a href="#/calendar" data-route="calendar">Календарь</a>
+      <a href="#/tasks" data-route="tasks">Задачи</a>
+      <a href="#/settings" data-route="settings">Ещё</a>
+    </nav>
+  </div>
+
+  <script src="storage.js"></script>
+  <script src="auth.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
