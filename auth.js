@@ -1,24 +1,13 @@
-/* Авторизация: хэш пароля, сессия, блокировка перебора */
 const AUTH_KEY = 'starosta_auth';
 const SESSION_KEY = 'starosta_session';
 const LOCK_KEY = 'starosta_lock';
-
 const SESSION_DAYS_REMEMBER = 30;
 const SESSION_DAYS_NORMAL = 1;
 const MAX_ATTEMPTS = 5;
 const LOCK_MS = 30 * 1000;
 
-function bufToHex(buf) {
-  return Array.from(new Uint8Array(buf))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-function randomSalt() {
-  const arr = new Uint8Array(16);
-  crypto.getRandomValues(arr);
-  return bufToHex(arr);
-}
+function bufToHex(buf) { return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(''); }
+function randomSalt() { const arr = new Uint8Array(16); crypto.getRandomValues(arr); return bufToHex(arr); }
 
 async function hashPassword(password, salt) {
   const data = new TextEncoder().encode(salt + ':' + password);
@@ -26,13 +15,7 @@ async function hashPassword(password, salt) {
   return bufToHex(digest);
 }
 
-function getAuth() {
-  try {
-    return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
-  } catch {
-    return null;
-  }
-}
+function getAuth() { try { return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch { return null; } }
 
 async function createAccount(username, password) {
   const salt = randomSalt();
@@ -61,14 +44,9 @@ async function changePassword(oldPassword, newPassword) {
   return true;
 }
 
-/* Сессия */
 function startSession(username, remember) {
   const days = remember ? SESSION_DAYS_REMEMBER : SESSION_DAYS_NORMAL;
-  const session = {
-    username,
-    loginAt: Date.now(),
-    expiresAt: Date.now() + days * 24 * 60 * 60 * 1000,
-  };
+  const session = { username, loginAt: Date.now(), expiresAt: Date.now() + days * 24 * 60 * 60 * 1000 };
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
 }
 
@@ -76,55 +54,27 @@ function getSession() {
   try {
     const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
     if (!s) return null;
-    if (s.expiresAt < Date.now()) {
-      localStorage.removeItem(SESSION_KEY);
-      return null;
-    }
+    if (s.expiresAt < Date.now()) { localStorage.removeItem(SESSION_KEY); return null; }
     return s;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
-function endSession() {
-  localStorage.removeItem(SESSION_KEY);
-}
+function endSession() { localStorage.removeItem(SESSION_KEY); }
 
-/* Блокировка после N неудачных попыток */
-function getLock() {
-  try {
-    return JSON.parse(localStorage.getItem(LOCK_KEY) || 'null');
-  } catch {
-    return null;
-  }
-}
-
+function getLock() { try { return JSON.parse(localStorage.getItem(LOCK_KEY) || 'null'); } catch { return null; } }
 function isLocked() {
   const lock = getLock();
   if (!lock) return { locked: false };
-  if (lock.until > Date.now()) {
-    return { locked: true, secondsLeft: Math.ceil((lock.until - Date.now()) / 1000) };
-  }
+  if (lock.until > Date.now()) return { locked: true, secondsLeft: Math.ceil((lock.until - Date.now()) / 1000) };
   localStorage.removeItem(LOCK_KEY);
   return { locked: false };
 }
-
 function registerFailedAttempt() {
   const lock = getLock() || { attempts: 0, until: 0 };
   lock.attempts = (lock.attempts || 0) + 1;
-  if (lock.attempts >= MAX_ATTEMPTS) {
-    lock.until = Date.now() + LOCK_MS;
-    lock.attempts = 0;
-  }
+  if (lock.attempts >= MAX_ATTEMPTS) { lock.until = Date.now() + LOCK_MS; lock.attempts = 0; }
   localStorage.setItem(LOCK_KEY, JSON.stringify(lock));
 }
+function clearFailedAttempts() { localStorage.removeItem(LOCK_KEY); }
 
-function clearFailedAttempts() {
-  localStorage.removeItem(LOCK_KEY);
-}
-
-window.Auth = {
-  getAuth, createAccount, verifyCredentials, changePassword,
-  startSession, getSession, endSession,
-  isLocked, registerFailedAttempt, clearFailedAttempts,
-};
+window.Auth = { getAuth, createAccount, verifyCredentials, changePassword, startSession, getSession, endSession, isLocked, registerFailedAttempt, clearFailedAttempts };
