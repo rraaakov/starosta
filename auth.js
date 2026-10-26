@@ -33,17 +33,6 @@ async function verifyCredentials(username, password) {
   return hash === auth.passwordHash;
 }
 
-async function changePassword(oldPassword, newPassword) {
-  const auth = getAuth();
-  if (!auth) return false;
-  const oldHash = await hashPassword(oldPassword, auth.salt);
-  if (oldHash !== auth.passwordHash) return false;
-  const salt = randomSalt();
-  const passwordHash = await hashPassword(newPassword, salt);
-  localStorage.setItem(AUTH_KEY, JSON.stringify({ ...auth, salt, passwordHash }));
-  return true;
-}
-
 function startSession(username, remember) {
   const days = remember ? SESSION_DAYS_REMEMBER : SESSION_DAYS_NORMAL;
   const session = { username, loginAt: Date.now(), expiresAt: Date.now() + days * 24 * 60 * 60 * 1000 };
@@ -77,4 +66,4 @@ function registerFailedAttempt() {
 }
 function clearFailedAttempts() { localStorage.removeItem(LOCK_KEY); }
 
-window.Auth = { getAuth, createAccount, verifyCredentials, changePassword, startSession, getSession, endSession, isLocked, registerFailedAttempt, clearFailedAttempts };
+window.Auth = { getAuth, createAccount, verifyCredentials, startSession, getSession, endSession, isLocked, registerFailedAttempt, clearFailedAttempts };
