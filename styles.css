@@ -428,4 +428,75 @@ body.dark .pay-status.unpaid { background: #7f1d1d; color: #fca5a5; }
 .sched-day-title {
   font-size: 14px; font-weight: 700; color: var(--accent);
   padding: 6px 4px; margin-bottom: 8px;
-  text-transform
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.sched-item {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--shadow-sm);
+  animation: slideUp .3s cubic-bezier(.2,.8,.2,1) both;
+}
+.sched-time {
+  min-width: 60px; font-weight: 800; font-size: 15px; color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.sched-body { flex: 1; min-width: 0; }
+.sched-subject { font-weight: 600; font-size: 14px; }
+.sched-teacher { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.sched-day.today .sched-day-title { color: var(--success); }
+
+/* ============ НАСТРОЙКИ ============ */
+.settings-section {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow-sm);
+  animation: slideUp .3s cubic-bezier(.2,.8,.2,1) both;
+}
+.settings-section h4 { margin: 0 0 12px; font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+.settings-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; gap: 10px; }
+.settings-row select {
+  padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 10px;
+  background: var(--bg); color: var(--text); font-size: 14px;
+}
+.settings-btn {
+  padding: 12px 14px; border: 1.5px solid var(--border); background: var(--bg);
+  border-radius: 12px; color: var(--text); font-size: 14px; font-weight: 600;
+  cursor: pointer; width: 100%; margin-top: 8px;
+  transition: background .15s, transform .12s;
+}
+.settings-btn:active { transform: scale(.98); background: var(--bg-alt); }
+.settings-btn.danger { background: var(--danger); color: #fff; border: none; }
+
+.accent-picker { display: flex; gap: 10px; margin: 8px 0 4px; flex-wrap: wrap; }
+.accent-dot {
+  width: 34px; height: 34px; border-radius: 50%; cursor: pointer; border: 3px solid transparent;
+  transition: transform .15s, border-color .2s;
+}
+.accent-dot:active { transform: scale(.9); }
+.accent-dot.selected { border-color: var(--text); }
+
+/* ============ "ЕЩЁ" ============ */
+.more-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+.more-tile {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px 16px; text-align: center; cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform .15s;
+  animation: slideUp .3s cubic-bezier(.2,.8,.2,1) both;
+}
+.more-tile:active { transform: scale(.96); }
+.more-tile .more-icon { font-size: 32px; margin-bottom: 8px; display: block; }
+.more-tile .more-label { font-size: 14px; font-weight: 600; }
+
+/* ============ ДНИ РОЖДЕНИЯ ============ */
+.bday-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); margin-bottom: 8px;
+  box-shadow: var(--shadow-sm);
+  animation: slideUp .3s cubic-bezier(.2,.8,.2,1) both;
+}
+.bday-item .bday-info { flex: 1; min-width: 0; }
+.bday-item .bday-name { font-weight: 600; font-size: 14px; }
+.bday-item .bday-when { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.bday-item .bday-emoji { font-size: 22px; }
