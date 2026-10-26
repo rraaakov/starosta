@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#3b6cf6" />
+  <meta name="theme-color" content="#6366f1" />
   <title>Староста</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
@@ -12,6 +12,7 @@
   <!-- Онбординг -->
   <section id="onboarding" class="auth-screen hidden">
     <div class="auth-card">
+      <div class="auth-logo">С</div>
       <h1>Староста</h1>
       <p class="auth-sub">Создайте аккаунт старосты</p>
       <form id="onboarding-form" autocomplete="off">
@@ -33,6 +34,7 @@
   <!-- Вход -->
   <section id="login" class="auth-screen hidden">
     <div class="auth-card">
+      <div class="auth-logo">С</div>
       <h1>Староста</h1>
       <p class="auth-sub">Вход</p>
       <form id="login-form" autocomplete="off">
@@ -56,18 +58,22 @@
   <div id="app" class="hidden">
     <header class="app-header">
       <h2 id="app-title">Главная</h2>
+      <div id="header-actions"></div>
     </header>
-    <main id="view" class="view"></main>
+
+    <main id="view" class="view">
+      <!-- скелетон при первом рендере -->
+    </main>
+
     <nav class="bottom-nav">
-      <a href="#/dashboard" data-route="dashboard">Главная</a>
-      <a href="#/students" data-route="students">Студенты</a>
-      <a href="#/calendar" data-route="calendar">Календарь</a>
-      <a href="#/tasks" data-route="tasks">Задачи</a>
-      <a href="#/settings" data-route="settings">Ещё</a>
+      <a href="#/dashboard" data-route="dashboard"><span class="nav-icon">🏠</span><span>Главная</span></a>
+      <a href="#/students" data-route="students"><span class="nav-icon">👥</span><span>Студенты</span></a>
+      <a href="#/calendar" data-route="calendar"><span class="nav-icon">📅</span><span>Календарь</span></a>
+      <a href="#/tasks" data-route="tasks"><span class="nav-icon">✅</span><span>Задачи</span><span id="tasks-badge" class="nav-badge hidden"></span></a>
+      <a href="#/more" data-route="more"><span class="nav-icon">⋯</span><span>Ещё</span></a>
     </nav>
   </div>
 
-  <!-- Модальное окно -->
   <div id="modal" class="modal hidden">
     <div class="modal-backdrop" data-close-modal></div>
     <div class="modal-card" id="modal-content"></div>
