@@ -1,4 +1,4 @@
-const CACHE_NAME = 'starosta-v1';
+const CACHE_NAME = 'starosta-v2';
 const ASSETS = ['./', './index.html', './styles.css', './auth.js', './storage.js', './app.js', './manifest.json'];
 
 self.addEventListener('install', event => {
