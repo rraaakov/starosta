@@ -1,7 +1,9 @@
-const DB_KEY = 'starosta_db_v1';
+const DB_KEY = 'starosta_db_v2';
 
 const defaultDB = {
   students: [], events: [], attendance: [], tasks: [],
+  funds: { totalAmount: 0, payments: [] },
+  schedule: [],
 };
 
 function loadDB() {
@@ -9,8 +11,8 @@ function loadDB() {
     const raw = localStorage.getItem(DB_KEY);
     if (!raw) return structuredClone(defaultDB);
     const parsed = JSON.parse(raw);
-    return { ...defaultDB, ...parsed };
-  } catch (e) { console.error('loadDB error', e); return structuredClone(defaultDB); }
+    return { ...structuredClone(defaultDB), ...parsed };
+  } catch (e) { console.error('loadDB', e); return structuredClone(defaultDB); }
 }
 
 function saveDB(db) { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
@@ -31,7 +33,7 @@ function importDB(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      try { const parsed = JSON.parse(reader.result); saveDB({ ...defaultDB, ...parsed }); resolve(); }
+      try { const parsed = JSON.parse(reader.result); saveDB({ ...structuredClone(defaultDB), ...parsed }); resolve(); }
       catch (e) { reject(e); }
     };
     reader.onerror = reject;
