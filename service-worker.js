@@ -1,4 +1,4 @@
-const CACHE_NAME = 'starosta-v4';
+const CACHE_NAME = 'starosta-v5';
 const ASSETS = ['./', './index.html', './styles.css', './auth.js', './storage.js', './app.js', './schedule-import.js', './manifest.json'];
 
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS))); self.skipWaiting(); });
