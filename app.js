@@ -1,12 +1,6 @@
 const routes = {
-  dashboard: { title: 'Главная', idx: 0 },
-  students:  { title: 'Студенты', idx: 1 },
-  schedule:  { title: 'Расписание', idx: 2 },
-  calendar:  { title: 'Календарь', idx: 3 },
-  more:      { title: 'Ещё', idx: 4 },
-  tasks:     { title: 'Задачи', idx: -1 },
-  funds:     { title: 'Взносы', idx: -1 },
-  settings:  { title: 'Настройки', idx: -1 },
+  dashboard:{title:'Главная',idx:0}, students:{title:'Студенты',idx:1}, schedule:{title:'Расписание',idx:2}, calendar:{title:'Календарь',idx:3}, more:{title:'Ещё',idx:4},
+  tasks:{title:'Задачи',idx:-1}, funds:{title:'Взносы',idx:-1}, settings:{title:'Настройки',idx:-1}, notes:{title:'Заметки',idx:-1}, stats:{title:'Статистика',idx:-1}, casino:{title:'Казино',idx:-1},
 };
 
 const STATUS_LABELS = { ACTIVE:'Активен', ACADEMIC:'Академ. отпуск', EXPELLED:'Отчислен' };
@@ -643,5 +637,373 @@ function boot() {
   db = Store.loadDB();
   cleanupPastSchedule();
   render();
+}
+
+/* ============================================================
+   КАЗИНО
+   ============================================================ */
+const CASINO_KEY = 'starosta_casino_v1';
+
+function loadCasino() {
+  try {
+    const raw = localStorage.getItem(CASINO_KEY);
+    if (!raw) return { balance: 1000, cheat: 50, stats: { wins: 0, losses: 0 } };
+    return { balance: 1000, cheat: 50, stats: { wins: 0, losses: 0 }, ...JSON.parse(raw) };
+  } catch { return { balance: 1000, cheat: 50, stats: { wins: 0, losses: 0 } }; }
+}
+function saveCasino(c) { localStorage.setItem(CASINO_KEY, JSON.stringify(c)); }
+
+let casino = null;
+let casinoTab = 'roulette';
+let rouletteSpinning = false;
+let slotSpinning = false;
+let bjState = null;
+
+function renderCasino(view) {
+  casino = loadCasino();
+  const tabs = { roulette: '🎡 Рулетка', slots: '🎰 Слоты', blackjack: '🃏 Блекджек' };
+
+  view.innerHTML = `
+    <div class="casino-balance">
+      <div class="cb-label">Баланс</div>
+      <div class="cb-amount">${casino.balance.toLocaleString('ru-RU')} ₽</div>
+      <div class="cb-sub">Побед: ${casino.stats.wins} · Проигрышей: ${casino.stats.losses}</div>
+    </div>
+    <div class="casino-tabs">
+      ${Object.entries(tabs).map(([k,v]) => `<button class="casino-tab ${casinoTab===k?'active':''}" data-ctab="${k}">${v}</button>`).join('')}
+    </div>
+    <div id="casino-content"></div>
+    <button class="secret-btn" id="secret-btn">Секрет</button>
+  `;
+
+  $all('[data-ctab]').forEach(b => b.addEventListener('click', () => { casinoTab = b.dataset.ctab; renderCasino(view); }));
+  $('#secret-btn').addEventListener('click', openSecretPanel);
+
+  const content = $('#casino-content');
+  if (casinoTab === 'roulette') renderRoulette(content);
+  else if (casinoTab === 'slots') renderSlots(content);
+  else if (casinoTab === 'blackjack') renderBlackjack(content);
+}
+
+/* ---------- СЕКРЕТ ---------- */
+function openSecretPanel() {
+  const panel = document.createElement('div');
+  panel.className = 'secret-panel';
+  panel.innerHTML = `
+    <div class="secret-inner">
+      <h3>🔮 Секрет</h3>
+      <div class="secret-slider">
+        <label><span>Шанс победы</span><b id="sv-cheat">${casino.cheat}%</b></label>
+        <input type="range" min="0" max="100" value="${casino.cheat}" id="secret-range" />
+      </div>
+      <p style="font-size:12px;color:var(--muted);text-align:center;margin:0 0 12px">
+        Не рассказывайте никому 🤫
+      </p>
+      <button class="secret-close" id="secret-save">Сохранить и закрыть</button>
+    </div>
+  `;
+  document.body.appendChild(panel);
+  const range = panel.querySelector('#secret-range');
+  const label = panel.querySelector('#sv-cheat');
+  range.addEventListener('input', () => { label.textContent = range.value + '%'; });
+  panel.querySelector('#secret-save').addEventListener('click', () => {
+    casino.cheat = Number(range.value);
+    saveCasino(casino);
+    panel.remove();
+    showToast('Настройки сохранены 🤫', 'success');
+  });
+  panel.addEventListener('click', (e) => { if (e.target === panel) panel.remove(); });
+}
+
+/* ---------- РУЛЕТКА ---------- */
+function renderRoulette(content) {
+  content.innerHTML = `
+    <div class="bet-control">
+      <label>Ставка</label>
+      <input type="number" id="r-bet" value="50" min="1" max="${casino.balance}" />
+      <button class="max-btn" id="r-max">MAX</button>
+    </div>
+    <div class="casino-tabs" style="margin-bottom:12px">
+      <button class="casino-tab" data-color="red" style="background:#ef4444;color:#fff;border:none">Красное (x2)</button>
+      <button class="casino-tab" data-color="black" style="background:#0f172a;color:#fff;border:none">Чёрное (x2)</button>
+    </div>
+    <div class="roulette-result" id="r-result">Выберите цвет и сделайте ставку</div>
+    <div class="roulette-wheel" id="r-wheel"></div>
+    <button class="big-btn" id="r-spin" disabled>Крутить</button>
+  `;
+
+  const betInput = content.querySelector('#r-bet');
+  const resultEl = content.querySelector('#r-result');
+  const wheel = content.querySelector('#r-wheel');
+  const spinBtn = content.querySelector('#r-spin');
+  let chosenColor = null;
+
+  content.querySelector('#r-max').addEventListener('click', () => { betInput.value = casino.balance; });
+  content.querySelectorAll('[data-color]').forEach(b => b.addEventListener('click', () => {
+    chosenColor = b.dataset.color;
+    content.querySelectorAll('[data-color]').forEach(x => { x.style.transform = ''; });
+    b.style.transform = 'scale(1.05)';
+    spinBtn.disabled = false;
+  }));
+
+  spinBtn.addEventListener('click', () => {
+    if (rouletteSpinning || !chosenColor) return;
+    const bet = Number(betInput.value);
+    if (!bet || bet < 1 || bet > casino.balance) { showToast('Некорректная ставка','error'); return; }
+    rouletteSpinning = true;
+    spinBtn.disabled = true;
+    casino.balance -= bet;
+    saveCasino(casino);
+
+    // Определяем результат с учётом читерства
+    const cheatRoll = Math.random() * 100 < casino.cheat;
+    const actualColor = cheatRoll ? chosenColor : (Math.random() < 0.5 ? 'red' : 'black');
+    const win = actualColor === chosenColor;
+
+    const spins = 3 + Math.floor(Math.random() * 3);
+    const extraAngle = Math.random() * 360;
+    wheel.style.transform = `rotate(${spins * 360 + extraAngle}deg)`;
+
+    setTimeout(() => {
+      if (win) {
+        const payout = bet * 2;
+        casino.balance += payout;
+        casino.stats.wins++;
+        resultEl.textContent = `🎉 Выигрыш! +${payout} ₽ (${actualColor === 'red' ? 'красное' : 'чёрное'})`;
+        resultEl.className = 'roulette-result win';
+        confetti();
+        addXP(5, 'casino');
+      } else {
+        casino.stats.losses++;
+        resultEl.textContent = `😢 Проигрыш −${bet} ₽ (выпало ${actualColor === 'red' ? 'красное' : 'чёрное'})`;
+        resultEl.className = 'roulette-result lose';
+      }
+      saveCasino(casino);
+      rouletteSpinning = false;
+      spinBtn.disabled = false;
+      // Обновляем баланс
+      document.querySelector('.casino-balance .cb-amount').textContent = casino.balance.toLocaleString('ru-RU') + ' ₽';
+      document.querySelector('.casino-balance .cb-sub').textContent = `Побед: ${casino.stats.wins} · Проигрышей: ${casino.stats.losses}`;
+      betInput.max = casino.balance;
+    }, 3000);
+  });
+}
+
+/* ---------- СЛОТЫ ---------- */
+const SLOT_SYMBOLS = ['🍒','🍋','🍊','🍇','⭐','💎','7️⃣'];
+const SLOT_PAYOUTS = { '🍒': 3, '🍋': 4, '🍊': 5, '🍇': 6, '⭐': 10, '💎': 20, '7️⃣': 50 };
+
+function renderSlots(content) {
+  content.innerHTML = `
+    <div class="bet-control">
+      <label>Ставка</label>
+      <input type="number" id="s-bet" value="50" min="1" max="${casino.balance}" />
+      <button class="max-btn" id="s-max">MAX</button>
+    </div>
+    <div class="slots-machine">
+      <div class="slot-reel" id="reel-0">🍒</div>
+      <div class="slot-reel" id="reel-1">🍋</div>
+      <div class="slot-reel" id="reel-2">🍊</div>
+    </div>
+    <div class="roulette-result" id="s-result">Крутите барабаны!</div>
+    <button class="big-btn" id="s-spin">🎰 Крутить</button>
+  `;
+
+  const betInput = content.querySelector('#s-bet');
+  const resultEl = content.querySelector('#s-result');
+  const spinBtn = content.querySelector('#s-spin');
+  const reels = [content.querySelector('#reel-0'), content.querySelector('#reel-1'), content.querySelector('#reel-2')];
+
+  content.querySelector('#s-max').addEventListener('click', () => { betInput.value = casino.balance; });
+
+  spinBtn.addEventListener('click', () => {
+    if (slotSpinning) return;
+    const bet = Number(betInput.value);
+    if (!bet || bet < 1 || bet > casino.balance) { showToast('Некорректная ставка','error'); return; }
+    slotSpinning = true;
+    spinBtn.disabled = true;
+    casino.balance -= bet;
+    saveCasino(casino);
+
+    reels.forEach(r => r.classList.add('spinning'));
+    const cheatRoll = Math.random() * 100 < casino.cheat;
+
+    const spinInterval = setInterval(() => {
+      reels.forEach(r => { r.textContent = SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)]; });
+    }, 80);
+
+    setTimeout(() => {
+      clearInterval(spinInterval);
+      let final;
+      if (cheatRoll) {
+        // Победная комбинация
+        const sym = SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)];
+        final = [sym, sym, sym];
+      } else {
+        final = [0,0,0].map(() => SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)]);
+      }
+      reels.forEach((r, i) => { r.textContent = final[i]; r.classList.remove('spinning'); });
+
+      let win = false, payout = 0;
+      if (final[0] === final[1] && final[1] === final[2]) {
+        win = true;
+        payout = bet * (SLOT_PAYOUTS[final[0]] || 3);
+      }
+
+      if (win) {
+        casino.balance += payout;
+        casino.stats.wins++;
+        reels.forEach(r => r.classList.add('win'));
+        resultEl.textContent = `🎉 ДЖЕКПОТ! ${final.join(' ')} +${payout} ₽`;
+        resultEl.className = 'roulette-result win';
+        confetti();
+        addXP(10, 'casino');
+      } else {
+        casino.stats.losses++;
+        resultEl.textContent = `😢 Не повезло −${bet} ₽`;
+        resultEl.className = 'roulette-result lose';
+      }
+      setTimeout(() => reels.forEach(r => r.classList.remove('win')), 1500);
+      saveCasino(casino);
+      slotSpinning = false;
+      spinBtn.disabled = false;
+      document.querySelector('.casino-balance .cb-amount').textContent = casino.balance.toLocaleString('ru-RU') + ' ₽';
+      document.querySelector('.casino-balance .cb-sub').textContent = `Побед: ${casino.stats.wins} · Проигрышей: ${casino.stats.losses}`;
+      betInput.max = casino.balance;
+    }, 1800);
+  });
+}
+
+/* ---------- БЛЕКДЖЕК ---------- */
+function createDeck() {
+  const suits = ['♠','♥','♦','♣'];
+  const ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+  const deck = [];
+  suits.forEach(s => ranks.forEach(r => deck.push({ suit: s, rank: r })));
+  return deck;
+}
+function shuffle(deck) { for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; } return deck; }
+function cardValue(card) {
+  if (['J','Q','K'].includes(card.rank)) return 10;
+  if (card.rank === 'A') return 11;
+  return Number(card.rank);
+}
+function handValue(hand) {
+  let total = 0, aces = 0;
+  hand.forEach(c => { if (c.rank === 'A') aces++; total += cardValue(c); });
+  while (total > 21 && aces > 0) { total -= 10; aces--; }
+  return total;
+}
+function cardHtml(card) {
+  const isRed = card.suit === '♥' || card.suit === '♦';
+  return `<div class="bj-card ${isRed?'red':''}"><span class="suit">${card.suit}</span><span class="rank">${card.rank}</span></div>`;
+}
+
+function renderBlackjack(content) {
+  if (!bjState) {
+    content.innerHTML = `
+      <div class="bet-control">
+        <label>Ставка</label>
+        <input type="number" id="bj-bet" value="50" min="1" max="${casino.balance}" />
+        <button class="max-btn" id="bj-max">MAX</button>
+      </div>
+      <div class="roulette-result" id="bj-result">Нажмите «Раздать»</div>
+      <button class="big-btn" id="bj-start">🃏 Раздать</button>
+    `;
+    content.querySelector('#bj-max').addEventListener('click', () => { content.querySelector('#bj-bet').value = casino.balance; });
+    content.querySelector('#bj-start').addEventListener('click', () => {
+      const bet = Number(content.querySelector('#bj-bet').value);
+      if (!bet || bet < 1 || bet > casino.balance) { showToast('Некорректная ставка','error'); return; }
+      casino.balance -= bet;
+      saveCasino(casino);
+      const deck = shuffle(createDeck());
+      bjState = { deck, player: [deck.pop(), deck.pop()], dealer: [deck.pop(), deck.pop()], bet, finished: false };
+      renderBlackjack(content);
+    });
+    return;
+  }
+
+  const { player, dealer, bet, finished, result } = bjState;
+  const pv = handValue(player);
+  const dv = handValue(dealer);
+
+  content.innerHTML = `
+    <div class="bj-area">
+      <div class="bj-hand">
+        <div class="bj-hand-title">Дилер ${finished ? `<span class="bj-score">${dv}</span>` : ''}</div>
+        <div class="bj-cards">${dealer.map((c,i) => (i === 1 && !finished) ? '<div class="bj-card" style="background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff">🂠</div>' : cardHtml(c)).join('')}</div>
+      </div>
+      <div class="bj-hand">
+        <div class="bj-hand-title">Ваши карты <span class="bj-score">${pv}</span></div>
+        <div class="bj-cards">${player.map(cardHtml).join('')}</div>
+      </div>
+    </div>
+    ${finished
+      ? `<div class="bj-result ${result==='win'?'win':result==='lose'?'lose':'draw'}">${result==='win'?`🎉 Победа! +${bet*2} ₽`:result==='lose'?`😢 Проигрыш −${bet} ₽`:'🤝 Ничья — ставка возвращена'}</div>
+         <button class="big-btn" id="bj-again" style="margin-top:12px">🔄 Сыграть ещё</button>`
+      : `<div class="bj-actions">
+           <button class="bj-hit" id="bj-hit">Взять</button>
+           <button class="bj-stand" id="bj-stand">Хватит</button>
+         </div>`}
+  `;
+
+  if (!finished) {
+    content.querySelector('#bj-hit').addEventListener('click', () => {
+      // С читом — игроку приходит хорошая карта
+      if (Math.random() * 100 < casino.cheat) {
+        // Найти карту, которая не перебор
+        const goodCards = bjState.deck.filter(c => handValue([...player, c]) <= 21);
+        if (goodCards.length) {
+          const pick = goodCards[Math.floor(Math.random() * goodCards.length)];
+          bjState.player.push(pick);
+          bjState.deck = bjState.deck.filter(c => c !== pick);
+        } else {
+          bjState.player.push(bjState.deck.pop());
+        }
+      } else {
+        bjState.player.push(bjState.deck.pop());
+      }
+      const pv2 = handValue(bjState.player);
+      if (pv2 > 21) { bjState.finished = true; bjState.result = 'lose'; casino.stats.losses++; saveCasino(casino); }
+      else if (pv2 === 21) { finishBlackjack(); }
+      renderBlackjack(content);
+    });
+    content.querySelector('#bj-stand').addEventListener('click', finishBlackjack);
+  } else {
+    content.querySelector('#bj-again').addEventListener('click', () => { bjState = null; renderBlackjack(content); });
+  }
+
+  function finishBlackjack() {
+    let dv2 = handValue(bjState.dealer);
+    const pv2 = handValue(bjState.player);
+    // Читерский дилер — если включён чит, дилер проигрывает чаще
+    while (dv2 < 17) {
+      if (Math.random() * 100 < casino.cheat && dv2 >= 17) break;
+      bjState.dealer.push(bjState.deck.pop());
+      dv2 = handValue(bjState.dealer);
+      if (casino.cheat > 0 && Math.random() * 100 < casino.cheat) {
+        // с читом дилер может «перебрать» специально
+        if (dv2 > 21) break;
+      }
+    }
+    if (dv2 > 21 || pv2 > dv2) {
+      bjState.result = 'win';
+      casino.balance += bjState.bet * 2;
+      casino.stats.wins++;
+      confetti();
+      addXP(10, 'casino');
+    } else if (pv2 === dv2) {
+      bjState.result = 'draw';
+      casino.balance += bjState.bet;
+    } else {
+      bjState.result = 'lose';
+      casino.stats.losses++;
+    }
+    bjState.finished = true;
+    saveCasino(casino);
+    renderBlackjack(content);
+    document.querySelector('.casino-balance .cb-amount').textContent = casino.balance.toLocaleString('ru-RU') + ' ₽';
+    document.querySelector('.casino-balance .cb-sub').textContent = `Побед: ${casino.stats.wins} · Проигрышей: ${casino.stats.losses}`;
+  }
 }
 document.addEventListener('DOMContentLoaded', boot);
