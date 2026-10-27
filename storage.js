@@ -10,11 +10,9 @@ function loadDB() {
   try {
     const raw = localStorage.getItem(DB_KEY);
     if (!raw) return structuredClone(defaultDB);
-    const parsed = JSON.parse(raw);
-    return { ...structuredClone(defaultDB), ...parsed };
-  } catch (e) { console.error('loadDB', e); return structuredClone(defaultDB); }
+    return { ...structuredClone(defaultDB), ...JSON.parse(raw) };
+  } catch (e) { return structuredClone(defaultDB); }
 }
-
 function saveDB(db) { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
 function resetDB() { localStorage.removeItem(DB_KEY); }
 
@@ -28,16 +26,12 @@ function exportDB() {
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
 }
-
 function importDB(file) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try { const parsed = JSON.parse(reader.result); saveDB({ ...structuredClone(defaultDB), ...parsed }); resolve(); }
-      catch (e) { reject(e); }
-    };
-    reader.onerror = reject;
-    reader.readAsText(file);
+    const r = new FileReader();
+    r.onload = () => { try { saveDB({ ...structuredClone(defaultDB), ...JSON.parse(r.result) }); resolve(); } catch (e) { reject(e); } };
+    r.onerror = reject;
+    r.readAsText(file);
   });
 }
 
