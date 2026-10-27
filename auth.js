@@ -4,66 +4,20 @@ const LOCK_KEY = 'starosta_lock';
 const SESSION_DAYS_REMEMBER = 30;
 const SESSION_DAYS_NORMAL = 1;
 const MAX_ATTEMPTS = 5;
-const LOCK_MS = 30 * 1000;
+const LOCK_MS = 30000;
 
-function bufToHex(buf) { return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(''); }
-function randomSalt() { const arr = new Uint8Array(16); crypto.getRandomValues(arr); return bufToHex(arr); }
-
-async function hashPassword(password, salt) {
-  const data = new TextEncoder().encode(salt + ':' + password);
-  const digest = await crypto.subtle.digest('SHA-256', data);
-  return bufToHex(digest);
-}
-
-function getAuth() { try { return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch { return null; } }
-
-async function createAccount(username, password) {
-  const salt = randomSalt();
-  const passwordHash = await hashPassword(password, salt);
-  const auth = { username: username.trim(), salt, passwordHash, createdAt: Date.now() };
-  localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
-  return auth;
-}
-
-async function verifyCredentials(username, password) {
-  const auth = getAuth();
-  if (!auth) return false;
-  if (auth.username.toLowerCase() !== username.trim().toLowerCase()) return false;
-  const hash = await hashPassword(password, auth.salt);
-  return hash === auth.passwordHash;
-}
-
-function startSession(username, remember) {
-  const days = remember ? SESSION_DAYS_REMEMBER : SESSION_DAYS_NORMAL;
-  const session = { username, loginAt: Date.now(), expiresAt: Date.now() + days * 24 * 60 * 60 * 1000 };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-}
-
-function getSession() {
-  try {
-    const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
-    if (!s) return null;
-    if (s.expiresAt < Date.now()) { localStorage.removeItem(SESSION_KEY); return null; }
-    return s;
-  } catch { return null; }
-}
-
-function endSession() { localStorage.removeItem(SESSION_KEY); }
-
-function getLock() { try { return JSON.parse(localStorage.getItem(LOCK_KEY) || 'null'); } catch { return null; } }
-function isLocked() {
-  const lock = getLock();
-  if (!lock) return { locked: false };
-  if (lock.until > Date.now()) return { locked: true, secondsLeft: Math.ceil((lock.until - Date.now()) / 1000) };
-  localStorage.removeItem(LOCK_KEY);
-  return { locked: false };
-}
-function registerFailedAttempt() {
-  const lock = getLock() || { attempts: 0, until: 0 };
-  lock.attempts = (lock.attempts || 0) + 1;
-  if (lock.attempts >= MAX_ATTEMPTS) { lock.until = Date.now() + LOCK_MS; lock.attempts = 0; }
-  localStorage.setItem(LOCK_KEY, JSON.stringify(lock));
-}
-function clearFailedAttempts() { localStorage.removeItem(LOCK_KEY); }
+function bufToHex(b){return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}
+function randomSalt(){const a=new Uint8Array(16);crypto.getRandomValues(a);return bufToHex(a);}
+async function hashPassword(p,s){const d=new TextEncoder().encode(s+':'+p);const h=await crypto.subtle.digest('SHA-256',d);return bufToHex(h);}
+function getAuth(){try{return JSON.parse(localStorage.getItem(AUTH_KEY)||'null');}catch{return null;}}
+async function createAccount(u,p){const salt=randomSalt();const passwordHash=await hashPassword(p,salt);const a={username:u.trim(),salt,passwordHash,createdAt:Date.now()};localStorage.setItem(AUTH_KEY,JSON.stringify(a));return a;}
+async function verifyCredentials(u,p){const a=getAuth();if(!a)return false;if(a.username.toLowerCase()!==u.trim().toLowerCase())return false;return (await hashPassword(p,a.salt))===a.passwordHash;}
+function startSession(u,r){const days=r?SESSION_DAYS_REMEMBER:SESSION_DAYS_NORMAL;localStorage.setItem(SESSION_KEY,JSON.stringify({username:u,loginAt:Date.now(),expiresAt:Date.now()+days*86400000}));}
+function getSession(){try{const s=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');if(!s)return null;if(s.expiresAt<Date.now()){localStorage.removeItem(SESSION_KEY);return null;}return s;}catch{return null;}}
+function endSession(){localStorage.removeItem(SESSION_KEY);}
+function getLock(){try{return JSON.parse(localStorage.getItem(LOCK_KEY)||'null');}catch{return null;}}
+function isLocked(){const l=getLock();if(!l)return{locked:false};if(l.until>Date.now())return{locked:true,secondsLeft:Math.ceil((l.until-Date.now())/1000)};localStorage.removeItem(LOCK_KEY);return{locked:false};}
+function registerFailedAttempt(){const l=getLock()||{attempts:0,until:0};l.attempts=(l.attempts||0)+1;if(l.attempts>=MAX_ATTEMPTS){l.until=Date.now()+LOCK_MS;l.attempts=0;}localStorage.setItem(LOCK_KEY,JSON.stringify(l));}
+function clearFailedAttempts(){localStorage.removeItem(LOCK_KEY);}
 
 window.Auth = { getAuth, createAccount, verifyCredentials, startSession, getSession, endSession, isLocked, registerFailedAttempt, clearFailedAttempts };
