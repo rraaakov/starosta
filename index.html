@@ -11,7 +11,7 @@
 <body>
   <!-- Онбординг -->
   <section id="onboarding" class="auth-screen hidden">
-    <div class="auth-card">
+    <div class="glass auth-card">
       <div class="auth-logo">С</div>
       <h1>Староста</h1>
       <p class="auth-sub">Создайте аккаунт старосты</p>
@@ -33,7 +33,7 @@
 
   <!-- Вход -->
   <section id="login" class="auth-screen hidden">
-    <div class="auth-card">
+    <div class="glass auth-card">
       <div class="auth-logo">С</div>
       <h1>Староста</h1>
       <p class="auth-sub">Вход</p>
@@ -56,19 +56,29 @@
 
   <!-- Приложение -->
   <div id="app" class="hidden">
-    <header class="app-header">
+    <header class="app-header glass">
       <h2 id="app-title">Главная</h2>
       <div id="header-actions"></div>
     </header>
 
     <main id="view" class="view"></main>
 
-    <nav class="bottom-nav">
-      <a href="#/dashboard" data-route="dashboard"><span class="nav-icon">🏠</span><span>Главная</span></a>
-      <a href="#/students" data-route="students"><span class="nav-icon">👥</span><span>Студенты</span></a>
-      <a href="#/calendar" data-route="calendar"><span class="nav-icon">📅</span><span>Календарь</span></a>
-      <a href="#/tasks" data-route="tasks"><span class="nav-icon">✅</span><span>Задачи</span><span id="tasks-badge" class="nav-badge hidden"></span></a>
-      <a href="#/more" data-route="more"><span class="nav-icon">⋯</span><span>Ещё</span></a>
+    <nav class="bottom-nav glass">
+      <a href="#/dashboard" data-route="dashboard" data-idx="0">
+        <span class="nav-icon">🏠</span><span>Главная</span>
+      </a>
+      <a href="#/students" data-route="students" data-idx="1">
+        <span class="nav-icon">👥</span><span>Студенты</span>
+      </a>
+      <a href="#/schedule" data-route="schedule" data-idx="2">
+        <span class="nav-icon">📚</span><span>Расписание</span>
+      </a>
+      <a href="#/calendar" data-route="calendar" data-idx="3">
+        <span class="nav-icon">📅</span><span>Календарь</span>
+      </a>
+      <a href="#/more" data-route="more" data-idx="4">
+        <span class="nav-icon">⋯</span><span>Ещё</span><span id="tasks-badge" class="nav-badge hidden"></span>
+      </a>
     </nav>
   </div>
 
