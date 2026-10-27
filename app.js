@@ -879,6 +879,20 @@ function initLogin() {
     location.hash = '#/dashboard'; render();
   });
 }
+/* ============ АВТООЧИСТКА ПРОШЕДШИХ ЗАПИСЕЙ РАСПИСАНИЯ ============ */
+function cleanupPastSchedule() {
+  const today = todayISO();
+  const before = db.schedule.length;
+  db.schedule = db.schedule.filter(x => {
+    // Записи без даты (недельный формат) сохраняем
+    if (!x.date) return true;
+    // Оставляем только сегодня и будущее
+    return x.date >= today;
+  });
+  if (db.schedule.length !== before) {
+    Store.saveDB(db);
+  }
+}
 
 /* ============ СТАРТ ============ */
 function boot() {
@@ -891,6 +905,10 @@ function boot() {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js').catch(() => {});
   if (!location.hash) location.hash = '#/dashboard';
+
+  // Загружаем БД, чистим прошедшие даты, затем рендерим
+  db = Store.loadDB();
+  cleanupPastSchedule();
   render();
 }
 
