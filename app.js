@@ -63,6 +63,7 @@ function render() {
     else if (route === 'tasks') renderTasks(view);
     else if (route === 'more') renderMore(view);
     else if (route === 'funds') renderFunds(view);
+    else if (route === 'casino') renderCasino(view);
     else if (route === 'schedule') renderSchedule(view);
     else if (route === 'settings') renderSettings(view);
     else renderDashboard(view);
@@ -531,6 +532,7 @@ function renderMore(view) {
       <div class="glass more-tile" data-goto="funds"><span class="more-icon">💸</span><div class="more-label">Взносы</div></div>
       <div class="glass more-tile" data-goto="attendance"><span class="more-icon">✔️</span><div class="more-label">Посещаемость</div></div>
       <div class="glass more-tile" data-goto="settings"><span class="more-icon">⚙️</span><div class="more-label">Настройки</div></div>
+      <div class="glass more-tile" data-goto="casino"><span class="more-icon">🎰</span><div class="more-label">Казино</div></div>
     </div>`;
   $all('[data-goto]').forEach(el => el.addEventListener('click', () => {
     const g = el.dataset.goto;
